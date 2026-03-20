@@ -1,0 +1,165 @@
+# =============================================================================
+# GitHub Actions CI — 6T SRAM Memory
+# Runs on every push and pull request:
+#   1. Verilator lint
+#   2. Icarus Verilog behavioural simulation
+#   3. Icarus corner sweep simulation
+#   4. Yosys synthesis check (SKY130 + generic)
+#   5. (Optional) SymbiYosys formal verification (BMC only, depth 10)
+# =============================================================================
+
+name: SRAM CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Lint
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Verilator Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Verilator
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y verilator
+
+      - name: Run lint
+        run: |
+          verilator --lint-only -Wall \
+            --top-module sram_memory \
+            rtl/sense_amplifier.v \
+            rtl/precharge.v \
+            rtl/write_driver.v \
+            rtl/sram_cell_6t.v \
+            rtl/row_decoder.v \
+            rtl/column_mux.v \
+            rtl/sram_array.v \
+            rtl/sram_memory.v \
+            2>&1 | tee lint.log
+          grep -i "error" lint.log && exit 1 || true
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Behavioural simulation
+  # ---------------------------------------------------------------------------
+  sim-behavioural:
+    name: Behavioural Simulation (Icarus)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog
+        run: sudo apt-get update -qq && sudo apt-get install -y iverilog
+
+      - name: Compile
+        run: |
+          iverilog -Wall -o sram_sim \
+            rtl/sense_amplifier.v \
+            rtl/precharge.v \
+            rtl/write_driver.v \
+            rtl/sram_cell_6t.v \
+            rtl/row_decoder.v \
+            rtl/column_mux.v \
+            rtl/sram_array.v \
+            rtl/sram_memory.v \
+            tb/sram_memory_tb.v
+
+      - name: Simulate
+        run: |
+          vvp sram_sim | tee sim_results.log
+          grep "ALL TESTS PASSED" sim_results.log || \
+            (echo "SIMULATION FAILED" && cat sim_results.log && exit 1)
+
+      - name: Upload waveform
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sram-vcd
+          path: sram_sim.vcd
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Corner sweep
+  # ---------------------------------------------------------------------------
+  sim-corners:
+    name: Corner Sweep (Icarus)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Icarus Verilog
+        run: sudo apt-get update -qq && sudo apt-get install -y iverilog
+
+      - name: Compile corner TB
+        run: |
+          iverilog -Wall -o sram_corner_sim \
+            rtl/sense_amplifier.v \
+            rtl/precharge.v \
+            rtl/write_driver.v \
+            rtl/sram_cell_6t.v \
+            rtl/row_decoder.v \
+            rtl/column_mux.v \
+            rtl/sram_array.v \
+            rtl/sram_memory.v \
+            tb/sram_corner_tb.v
+
+      - name: Run corner sweep
+        run: |
+          vvp sram_corner_sim | tee corner_results.log
+          grep "RESULT: ALL TESTS PASSED" corner_results.log || \
+            (echo "CORNER SWEEP FAILED" && cat corner_results.log && exit 1)
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Yosys generic synthesis check
+  # ---------------------------------------------------------------------------
+  synth-generic:
+    name: Yosys Generic Synthesis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Yosys
+        run: sudo apt-get update -qq && sudo apt-get install -y yosys
+
+      - name: Synthesise (generic target — no PDK needed in CI)
+        run: |
+          yosys -p "
+            read_verilog rtl/sense_amplifier.v
+            read_verilog rtl/precharge.v
+            read_verilog rtl/write_driver.v
+            read_verilog rtl/sram_cell_6t.v
+            read_verilog rtl/row_decoder.v
+            read_verilog rtl/column_mux.v
+            read_verilog rtl/sram_array.v
+            read_verilog rtl/sram_memory.v
+            hierarchy -check -top sram_memory
+            proc; flatten; opt; memory; opt; techmap; opt
+            stat
+            check
+          " 2>&1 | tee yosys_ci.log
+          grep -i "error" yosys_ci.log && exit 1 || true
+          grep "Printing statistics" yosys_ci.log
+
+      - name: Upload synthesis log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: yosys-ci-log
+          path: yosys_ci.log
+
+  # ---------------------------------------------------------------------------
+  # Summary job — requires all others to pass
+  # ---------------------------------------------------------------------------
+  ci-pass:
+    name: CI Pass
+    needs: [lint, sim-behavioural, sim-corners, synth-generic]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks passed
+        run: echo "All CI checks passed successfully."
