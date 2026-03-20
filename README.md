@@ -365,6 +365,9 @@ Scale to 256 rows x 32 bits: `ADDR_WIDTH=8, DATA_WIDTH=32`.
 
 ### My Results 
 
-1. Vivado Synthesized Design
+1. Vivado Schematic
    <img width="1777" height="645" alt="image" src="https://github.com/user-attachments/assets/6cda06c7-493d-40a9-a31a-1f2a29931d4c" />
+2. Synthesized Design on Vivado
+   <img width="797" height="873" alt="image" src="https://github.com/user-attachments/assets/9ab03f7b-4f18-42ba-b70f-0343f169d2fa" />
+
 
