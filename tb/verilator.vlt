@@ -1,0 +1,16 @@
+// =============================================================================
+// Verilator Lint Configuration — 6T SRAM Memory
+// Usage : verilator --lint-only -Wall -f verilator.vlt rtl/*.v
+// =============================================================================
+
+// Suppress intentional design choices that Verilator warns about:
+
+// sram_cell_6t: initial block used for simulation reset state — not flip-flop
+`verilator_config
+lint_off -rule INITIAL -file "*/sram_cell_6t.v"
+
+// row_decoder: integer loop variable — synthesis-safe with localparam bound
+lint_off -rule WIDTHTRUNC -file "*/row_decoder.v"
+
+// sram_array: generate-loop variable reuse across blocks
+lint_off -rule GENUNNAMED -file "*/sram_array.v"

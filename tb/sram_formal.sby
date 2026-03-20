@@ -1,0 +1,73 @@
+# =============================================================================
+# SymbiYosys Configuration — 6T SRAM Memory Formal Verification
+# Tool    : sby (SymbiYosys) — https://symbiyosys.readthedocs.io
+# Install : pip install symbiyosys
+#           OR: https://github.com/YosysHQ/oss-cad-suite-build (recommended)
+# Usage   : sby -f sram_formal.sby
+#
+# Modes run:
+#   bmc   — Bounded Model Check (k=20 steps): finds bugs within 20 cycles
+#   prove — Inductive proof:  proves properties hold for all reachable states
+#   cover — Cover check:      verifies that interesting states are reachable
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# BMC: Bounded Model Check — find assertion violations within 20 cycles
+# ---------------------------------------------------------------------------
+[task bmc]
+mode bmc
+depth 20
+expect pass
+
+# ---------------------------------------------------------------------------
+# Prove: Inductive proof — k-induction, proves properties for all time
+# ---------------------------------------------------------------------------
+[task prove]
+mode prove
+depth 20
+expect pass
+
+# ---------------------------------------------------------------------------
+# Cover: Reachability — find traces satisfying cover() statements
+# ---------------------------------------------------------------------------
+[task cover]
+mode cover
+depth 30
+expect pass
+
+# ---------------------------------------------------------------------------
+# Solver options
+# ---------------------------------------------------------------------------
+[options]
+bmc: solver boolector
+prove: solver boolector
+cover: solver boolector
+
+# ---------------------------------------------------------------------------
+# Verilog preprocessing
+# ---------------------------------------------------------------------------
+[script]
+read -formal rtl/sense_amplifier.v
+read -formal rtl/precharge.v
+read -formal rtl/write_driver.v
+read -formal rtl/sram_cell_6t.v
+read -formal rtl/row_decoder.v
+read -formal rtl/column_mux.v
+read -formal rtl/sram_array.v
+read -formal rtl/sram_memory.v
+read -formal tb/sram_formal_props.v
+prep -top sram_memory
+
+# ---------------------------------------------------------------------------
+# Source files (redundant listing for clarity — read above handles it)
+# ---------------------------------------------------------------------------
+[files]
+rtl/sense_amplifier.v
+rtl/precharge.v
+rtl/write_driver.v
+rtl/sram_cell_6t.v
+rtl/row_decoder.v
+rtl/column_mux.v
+rtl/sram_array.v
+rtl/sram_memory.v
+tb/sram_formal_props.v
