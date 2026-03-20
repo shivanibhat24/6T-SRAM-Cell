@@ -361,3 +361,10 @@ Scale to 256 rows x 32 bits: `ADDR_WIDTH=8, DATA_WIDTH=32`.
 | Output register | 1 | data_out updated from sense amp |
 | **Total read latency** | **4** | From cs+rw to valid data_out |
 | **Write latency** | **1** | Single-cycle direct write |
+
+
+### My Results 
+
+1. Vivado Synthesized Design
+   <img width="1777" height="645" alt="image" src="https://github.com/user-attachments/assets/6cda06c7-493d-40a9-a31a-1f2a29931d4c" />
+
