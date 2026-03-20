@@ -9,7 +9,7 @@ SKY130B (ASIC) and Artix-7 (FPGA). Converted and bug-fixed from VHDL original.
 
 ```
 sram_6t/
-├── Makefile                         — One-command entry point for all flows
+|
 ├── rtl/
 │   ├── sense_amplifier.v            — Registered differential sense amplifier
 │   ├── precharge.v                  — Bitline precharge (active-high PCH)
@@ -38,7 +38,8 @@ sram_6t/
 │       ├── sram_memory.sdc          — SDC timing constraints
 │       ├── sta_run.tcl              — Multi-corner STA (TT/SS/FF)
 │       └── power_analysis.tcl       — Post-route power estimation
-└── .github/workflows/ci.yml         — GitHub Actions CI pipeline
+|── Makefile                         — One-command entry point for all flows
+
 ```
 
 ---
