@@ -1,0 +1,52 @@
+# =============================================================================
+# Yosys Synthesis Script — 6T SRAM Memory
+# Target : SKY130 sky130_fd_sc_hd standard cell library
+# Usage  : yosys yosys_synth.ys
+# Output : yosys_out/sram_memory_mapped.v  (gate-level netlist)
+#          yosys_out/sram_memory.json       (for nextpnr if needed)
+# =============================================================================
+
+# --- Read liberty for technology mapping -------------------------------------
+read_liberty -lib $env(PDK_ROOT)/sky130B/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib
+
+# --- Read RTL sources --------------------------------------------------------
+read_verilog ../../rtl/sense_amplifier.v
+read_verilog ../../rtl/precharge.v
+read_verilog ../../rtl/write_driver.v
+read_verilog ../../rtl/sram_cell_6t.v
+read_verilog ../../rtl/row_decoder.v
+read_verilog ../../rtl/column_mux.v
+read_verilog ../../rtl/sram_array.v
+read_verilog ../../rtl/sram_memory.v
+
+# --- Elaborate top module ----------------------------------------------------
+hierarchy -check -top sram_memory
+
+# --- Generic synthesis passes ------------------------------------------------
+proc                  ;# Convert processes to logic
+flatten               ;# Flatten hierarchy for optimisation
+opt_clean -purge      ;# Remove unused signals/cells
+opt                   ;# Multi-level optimisation pass
+memory                ;# Infer memories (none in this design — behavioural cells)
+opt -full             ;# Second optimisation pass
+techmap               ;# Map to internal gate primitives
+opt_clean
+
+# --- Technology mapping (ABC) ------------------------------------------------
+abc -liberty $env(PDK_ROOT)/sky130B/libs.ref/sky130_fd_sc_hd/lib/sky130_fd_sc_hd__tt_025C_1v80.lib \
+    -script +strash;ifraig;scorr;dc2;dretime;strash;&get -n;&dch -f;&nf{50};&put
+
+opt_clean -purge
+
+# --- Final clean-up ----------------------------------------------------------
+setundef -undriven -zero
+
+# --- Reports -----------------------------------------------------------------
+tee -o yosys_out/stat.txt stat
+tee -o yosys_out/check.txt check
+
+# --- Write outputs -----------------------------------------------------------
+write_verilog -noattr -noexpr yosys_out/sram_memory_mapped.v
+write_json                    yosys_out/sram_memory.json
+
+puts "=== Yosys synthesis complete ==="
