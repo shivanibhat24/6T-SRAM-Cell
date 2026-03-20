@@ -1,0 +1,44 @@
+{
+    "meta": {
+        "version": 2,
+        "flow": "Classic"
+    },
+
+    "PDK":          "sky130A",
+    "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+
+    "DESIGN_NAME": "sram_memory",
+
+    "VERILOG_FILES": [
+        "dir::../../rtl/sense_amplifier.v",
+        "dir::../../rtl/precharge.v",
+        "dir::../../rtl/write_driver.v",
+        "dir::../../rtl/sram_cell_6t.v",
+        "dir::../../rtl/row_decoder.v",
+        "dir::../../rtl/column_mux.v",
+        "dir::../../rtl/sram_array.v",
+        "dir::../../rtl/sram_memory.v"
+    ],
+
+    "CLOCK_PORT":   "clk",
+    "CLOCK_PERIOD": 10.0,
+
+    "DESIGN_IS_CORE": true,
+
+    "FP_SIZING":           "relative",
+    "FP_CORE_UTIL":        45,
+    "FP_ASPECT_RATIO":     1,
+    "FP_CORE_MARGIN":      10,
+
+    "PL_TARGET_DENSITY_PCT": 50,
+
+    "SYNTH_STRATEGY":      "AREA 0",
+    "SYNTH_MAX_FANOUT":    10,
+
+    "ROUTING_CORES":       4,
+
+    "QUIT_ON_TIMING_VIOLATIONS": false,
+    "QUIT_ON_MAGIC_DRC":         false,
+
+    "MAX_FANOUT_CONSTRAINT": 10
+}
